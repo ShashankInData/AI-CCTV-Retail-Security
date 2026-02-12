@@ -1,0 +1,17 @@
+ultralytics>=8.0.0
+supervision>=0.18.0
+opencv-python>=4.8.0
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.35.0
+av>=10.0.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+streamlit>=1.28.0
+sqlalchemy>=2.0.0
+python-dotenv>=1.0.0
+ffmpeg-python>=0.2.0
+pillow>=10.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+tqdm>=4.66.0
