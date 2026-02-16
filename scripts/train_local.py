@@ -86,9 +86,9 @@ def evaluate(model, dataloader, criterion, device):
 
 def main():
     # Config
-    BATCH_SIZE = 6  # RTX 5070 8GB can handle this
-    NUM_EPOCHS = 15
-    LEARNING_RATE = 5e-4
+    BATCH_SIZE = 4  # reduced to fit full fine-tune in VRAM
+    NUM_EPOCHS = 20
+    LEARNING_RATE = 2e-5  # lower LR for full fine-tuning
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     print(f"🖥️  Using device: {DEVICE}")
@@ -131,23 +131,26 @@ def main():
         ignore_mismatched_sizes=True
     )
     
-    # Freeze backbone (train only classifier head)
-    print("🔒 Freezing backbone, training only classification head...")
-    for name, param in model.named_parameters():
-        if "classifier" not in name:
-            param.requires_grad = False
-    
+    # Full fine-tune: unfreeze all layers with layer-wise LR decay
+    print("🔓 Full fine-tuning all layers...")
+    for param in model.parameters():
+        param.requires_grad = True
+
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"   Trainable parameters: {trainable_params:,}")
-    
+
     model = model.to(DEVICE)
-    
-    # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=LEARNING_RATE
-    )
+
+    # Loss with class weights to handle any remaining imbalance
+    criterion = nn.CrossEntropyLoss(weight=torch.tensor([1.0, 2.0]).to(DEVICE))
+
+    # Separate LRs: lower for backbone, higher for classifier head
+    backbone_params = [p for n, p in model.named_parameters() if "classifier" not in n]
+    head_params = [p for n, p in model.named_parameters() if "classifier" in n]
+    optimizer = torch.optim.AdamW([
+        {"params": backbone_params, "lr": LEARNING_RATE},
+        {"params": head_params, "lr": LEARNING_RATE * 10},
+    ], weight_decay=1e-4)
     
     # Training loop
     best_val_f1 = 0

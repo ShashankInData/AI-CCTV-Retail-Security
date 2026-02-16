@@ -1,12 +1,15 @@
 venv/
 __pycache__/
 *.pyc
-*.pt
-*.pth
 .env
 NUL
+=*
+
+# Large files
 data/
-!src/data/
 models/
 outputs/
-=*
+*.pt
+*.pth
+*.safetensors
+*.zip
